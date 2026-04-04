@@ -1,0 +1,76 @@
+package org.fletes.rest;
+
+import org.fletes.model.Cliente;
+
+import jakarta.inject.Inject;
+import jakarta.persistence.EntityManager;
+import jakarta.transaction.Transactional;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+
+import java.net.URI;
+import java.util.List;
+
+@Path("/clientes")
+@Produces(MediaType.APPLICATION_JSON)
+@Consumes(MediaType.APPLICATION_JSON)
+public class ClienteResource {
+
+    @Inject
+    EntityManager em;
+
+    @POST
+    @Transactional
+    public Response crear(Cliente cliente) {
+        if (cliente == null
+                || cliente.getNombre() == null || cliente.getNombre().isBlank()
+                || cliente.getApellido() == null || cliente.getApellido().isBlank()
+                || cliente.getEmail() == null || cliente.getEmail().isBlank()
+                || cliente.getTelefono() == null || cliente.getTelefono().isBlank()) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity("Datos del cliente inválidos")
+                    .build();
+        }
+
+        Long cantidad = em.createQuery(
+                "SELECT COUNT(c) FROM Cliente c WHERE c.email = :email", Long.class)
+                .setParameter("email", cliente.getEmail())
+                .getSingleResult();
+
+        if (cantidad > 0) {
+            return Response.status(Response.Status.CONFLICT)
+                    .entity("Ya existe un cliente con ese email")
+                    .build();
+        }
+
+        em.persist(cliente);
+
+        return Response.created(URI.create("/clientes/" + cliente.getId()))
+                .entity(cliente)
+                .build();
+    }
+
+    @GET
+    public Response listar() {
+        List<Cliente> lista = em.createQuery(
+                "SELECT c FROM Cliente c ORDER BY c.id", Cliente.class)
+                .getResultList();
+
+        return Response.ok(lista).build();
+    }
+
+    @GET
+    @Path("/{id}")
+    public Response buscarPorId(@PathParam("id") Long id) {
+        Cliente cliente = em.find(Cliente.class, id);
+
+        if (cliente == null) {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity("Cliente no encontrado")
+                    .build();
+        }
+
+        return Response.ok(cliente).build();
+    }
+}
