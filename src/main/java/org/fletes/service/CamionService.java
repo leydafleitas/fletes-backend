@@ -1,39 +1,45 @@
 package org.fletes.service;
 
-import jakarta.ejb.Stateless;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.fletes.model.Camion;
 import java.util.List;
 
-@Stateless
+@ApplicationScoped
 @Transactional
 public class CamionService {
 
+    @Inject
+    EntityManager entityManager;
+
     public List<Camion> findAll() {
-        return Camion.listAll();
+        return entityManager.createQuery("SELECT c FROM Camion c", Camion.class).getResultList();
     }
 
     public List<Camion> findActive() {
-        return Camion.find("activo", true).list();
+        return entityManager.createQuery("SELECT c FROM Camion c WHERE c.activo = true", Camion.class)
+                .getResultList();
     }
 
     public Camion findById(Long id) {
-        return Camion.findById(id);
+        return entityManager.find(Camion.class, id);
     }
 
     public void create(Camion camion) {
-        camion.persist();
+        entityManager.persist(camion);
     }
 
     public void update(Camion camion) {
-        camion.persist();
+        entityManager.merge(camion);
     }
 
     public void delete(Long id) {
-        Camion camion = Camion.findById(id);
+        Camion camion = entityManager.find(Camion.class, id);
         if (camion != null) {
-            camion.activo = false;
-            camion.persist();
+            camion.setActivo(false);
+            entityManager.merge(camion);
         }
     }
 }
