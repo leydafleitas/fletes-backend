@@ -1,10 +1,9 @@
 package org.fletes.rest;
 
 import org.fletes.model.Camion;
-import org.fletes.model.Reserva;
+import org.fletes.service.ReservaService;
 
 import jakarta.inject.Inject;
-import jakarta.persistence.EntityManager;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -17,7 +16,7 @@ import java.util.List;
 public class DisponibilidadResource {
 
     @Inject
-    EntityManager em;
+    ReservaService reservaService;
 
     @GET
     public Response buscarDisponibles(@QueryParam("fechaInicio") String fechaInicioStr,
@@ -42,31 +41,7 @@ public class DisponibilidadResource {
                     .build();
         }
 
-        if (fechaFin.isBefore(fechaInicio)) {
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity("La fecha fin no puede ser menor que la fecha inicio")
-                    .build();
-        }
-
-        List<Camion> disponibles = em.createQuery("""
-                SELECT c
-                FROM Camion c
-                WHERE c.activo = true
-                  AND c.capacidadVolumen >= :volumen
-                  AND c.id NOT IN (
-                      SELECT r.camion.id
-                      FROM Reserva r
-                      WHERE r.estado <> :cancelada
-                        AND r.fechaInicio <= :fechaFin
-                        AND r.fechaFin >= :fechaInicio
-                  )
-                ORDER BY c.id
-                """, Camion.class)
-                .setParameter("volumen", volumen)
-                .setParameter("cancelada", Reserva.EstadoReserva.CANCELADA)
-                .setParameter("fechaInicio", fechaInicio)
-                .setParameter("fechaFin", fechaFin)
-                .getResultList();
+        List<Camion> disponibles = reservaService.buscarCamionesDisponibles(fechaInicio, fechaFin, volumen);
 
         return Response.ok(disponibles).build();
     }

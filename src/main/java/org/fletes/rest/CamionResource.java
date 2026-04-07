@@ -4,14 +4,12 @@ import org.fletes.model.Camion;
 import org.fletes.service.CamionService;
 
 import jakarta.inject.Inject;
-import jakarta.persistence.EntityManager;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import java.net.URI;
 import java.util.List;
-
 
 @Path("/camiones")
 @Produces(MediaType.APPLICATION_JSON)
@@ -21,9 +19,6 @@ public class CamionResource {
     @Inject
     CamionService camionService;
 
-    @Inject
-    EntityManager em;
-
     @POST
     public Response crear(Camion camion) {
         if (camion == null || camion.getPatente() == null || camion.getPatente().isBlank()
@@ -32,17 +27,6 @@ public class CamionResource {
                 || camion.getCapacidadVolumen() == null || camion.getCapacidadVolumen() <= 0) {
             return Response.status(Response.Status.BAD_REQUEST)
                     .entity("Datos del camión inválidos")
-                    .build();
-        }
-
-        Long cantidad = em.createQuery(
-                "SELECT COUNT(c) FROM Camion c WHERE c.patente = :patente", Long.class)
-                .setParameter("patente", camion.getPatente())
-                .getSingleResult();
-
-        if (cantidad > 0) {
-            return Response.status(Response.Status.CONFLICT)
-                    .entity("Ya existe un camión con esa patente")
                     .build();
         }
 
