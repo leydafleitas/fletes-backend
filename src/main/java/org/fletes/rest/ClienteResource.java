@@ -57,4 +57,35 @@ public class ClienteResource {
 
         return Response.ok(cliente).build();
     }
+
+    @PUT
+    @Path("/{id}")
+    public Response actualizar(@PathParam("id") Long id, Cliente cliente) {
+        Cliente existente = clienteService.findById(id);
+
+        if (existente == null) {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity("Cliente no encontrado")
+                    .build();
+        }
+
+        if (cliente == null
+                || cliente.getNombre() == null || cliente.getNombre().isBlank()
+                || cliente.getApellido() == null || cliente.getApellido().isBlank()
+                || cliente.getEmail() == null || cliente.getEmail().isBlank()
+                || cliente.getTelefono() == null || cliente.getTelefono().isBlank()) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity("Datos del cliente inválidos")
+                    .build();
+        }
+
+        existente.setNombre(cliente.getNombre());
+        existente.setApellido(cliente.getApellido());
+        existente.setEmail(cliente.getEmail());
+        existente.setTelefono(cliente.getTelefono());
+
+        clienteService.update(existente);
+
+        return Response.ok(existente).build();
+    }
 }

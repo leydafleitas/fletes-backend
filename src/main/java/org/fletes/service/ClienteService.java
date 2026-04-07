@@ -29,6 +29,14 @@ public class ClienteService {
         em.persist(cliente);
     }
 
+    public void update(Cliente cliente) {
+        Cliente existing = findByEmail(cliente.getEmail());
+        if (existing != null && !existing.getId().equals(cliente.getId())) {
+            throw new IllegalStateException("Ya existe otro cliente con ese email: " + cliente.getEmail());
+        }
+        em.merge(cliente);
+    }
+
     public Cliente findByEmail(String email) {
         List<Cliente> clientes = em.createQuery("SELECT c FROM Cliente c WHERE c.email = :email", Cliente.class)
                 .setParameter("email", email)
