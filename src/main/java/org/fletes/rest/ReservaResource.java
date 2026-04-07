@@ -63,6 +63,50 @@ public class ReservaResource {
         return Response.ok(reserva).build();
     }
 
+    // ─────────────────────────────────────────────
+    // ACTUALIZAR RESERVA
+    // ─────────────────────────────────────────────
+
+    @PUT
+    @Path("/{id}")
+    public Response actualizar(@PathParam("id") Long id, ReservaRequest req) {
+        if (req == null
+                || req.camionId == null
+                || req.clienteId == null
+                || req.origen == null || req.origen.isBlank()
+                || req.destino == null || req.destino.isBlank()
+                || req.fechaInicio == null
+                || req.fechaFin == null
+                || req.volumenCarga == null || req.volumenCarga <= 0) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity("Datos de la reserva inválidos")
+                    .build();
+        }
+
+        try {
+            Reserva reserva = reservaService.actualizarReserva(
+                    id,
+                    req.camionId,
+                    req.clienteId,
+                    req.origen,
+                    req.destino,
+                    req.fechaInicio,
+                    req.fechaFin,
+                    req.volumenCarga
+            );
+            if (reserva == null) {
+                return Response.status(Response.Status.NOT_FOUND)
+                        .entity("Reserva no encontrada")
+                        .build();
+            }
+            return Response.ok(reserva).build();
+        } catch (IllegalArgumentException e) {
+            return Response.status(Response.Status.BAD_REQUEST).entity(e.getMessage()).build();
+        } catch (IllegalStateException e) {
+            return Response.status(Response.Status.BAD_REQUEST).entity(e.getMessage()).build();
+        }
+    }
+
     @PUT
     @Path("/{id}/cancelar")
     public Response cancelar(@PathParam("id") Long id) {
