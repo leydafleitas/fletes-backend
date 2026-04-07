@@ -66,7 +66,13 @@ public class ReservaResource {
     @PUT
     @Path("/{id}/cancelar")
     public Response cancelar(@PathParam("id") Long id) {
-        Reserva reserva = reservaService.cancelarReserva(id);
-        return Response.ok(reserva).build();
+        try {
+            Reserva reserva = reservaService.cancelarReserva(id);
+            return Response.ok(reserva).build();
+        } catch (IllegalArgumentException e) {
+            return Response.status(Response.Status.NOT_FOUND).entity(e.getMessage()).build();
+        } catch (IllegalStateException e) {
+            return Response.status(Response.Status.BAD_REQUEST).entity(e.getMessage()).build();
+        }
     }
 }
