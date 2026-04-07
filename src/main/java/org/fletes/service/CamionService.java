@@ -28,11 +28,25 @@ public class CamionService {
     }
 
     public void create(Camion camion) {
+        if (findByPatente(camion.getPatente()) != null) {
+            throw new IllegalStateException("Ya existe un camión con la patente: " + camion.getPatente());
+        }
         entityManager.persist(camion);
     }
 
     public void update(Camion camion) {
+        Camion existing = findByPatente(camion.getPatente());
+        if (existing != null && !existing.getId().equals(camion.getId())) {
+            throw new IllegalStateException("Ya existe otro camión con la patente: " + camion.getPatente());
+        }
         entityManager.merge(camion);
+    }
+
+    public Camion findByPatente(String patente) {
+        List<Camion> camiones = entityManager.createQuery("SELECT c FROM Camion c WHERE c.patente = :patente", Camion.class)
+                .setParameter("patente", patente)
+                .getResultList();
+        return camiones.isEmpty() ? null : camiones.get(0);
     }
 
     public void delete(Long id) {

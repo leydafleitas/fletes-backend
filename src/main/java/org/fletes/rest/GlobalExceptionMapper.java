@@ -12,10 +12,21 @@ public class GlobalExceptionMapper implements ExceptionMapper<Exception> {
 
     @Override
     public Response toResponse(Exception exception) {
-        return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+        Response.Status status = Response.Status.INTERNAL_SERVER_ERROR;
+        String error = "Error interno del servidor";
+
+        if (exception instanceof IllegalStateException) {
+            status = Response.Status.CONFLICT;
+            error = "Conflicto en la operación";
+        } else if (exception instanceof IllegalArgumentException) {
+            status = Response.Status.BAD_REQUEST;
+            error = "Datos inválidos";
+        }
+
+        return Response.status(status)
                 .type(MediaType.APPLICATION_JSON)
                 .entity(Map.of(
-                        "error", "Error interno del servidor",
+                        "error", error,
                         "detalle", exception.getMessage()
                 ))
                 .build();

@@ -1,10 +1,9 @@
 package org.fletes.rest;
 
 import org.fletes.model.Cliente;
+import org.fletes.service.ClienteService;
 
 import jakarta.inject.Inject;
-import jakarta.persistence.EntityManager;
-import jakarta.transaction.Transactional;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -18,10 +17,9 @@ import java.util.List;
 public class ClienteResource {
 
     @Inject
-    EntityManager em;
+    ClienteService clienteService;
 
     @POST
-    @Transactional
     public Response crear(Cliente cliente) {
         if (cliente == null
                 || cliente.getNombre() == null || cliente.getNombre().isBlank()
@@ -33,18 +31,7 @@ public class ClienteResource {
                     .build();
         }
 
-        Long cantidad = em.createQuery(
-                "SELECT COUNT(c) FROM Cliente c WHERE c.email = :email", Long.class)
-                .setParameter("email", cliente.getEmail())
-                .getSingleResult();
-
-        if (cantidad > 0) {
-            return Response.status(Response.Status.CONFLICT)
-                    .entity("Ya existe un cliente con ese email")
-                    .build();
-        }
-
-        em.persist(cliente);
+        clienteService.create(cliente);
 
         return Response.created(URI.create("/clientes/" + cliente.getId()))
                 .entity(cliente)
@@ -53,17 +40,14 @@ public class ClienteResource {
 
     @GET
     public Response listar() {
-        List<Cliente> lista = em.createQuery(
-                "SELECT c FROM Cliente c ORDER BY c.id", Cliente.class)
-                .getResultList();
-
+        List<Cliente> lista = clienteService.findAll();
         return Response.ok(lista).build();
     }
 
     @GET
     @Path("/{id}")
     public Response buscarPorId(@PathParam("id") Long id) {
-        Cliente cliente = em.find(Cliente.class, id);
+        Cliente cliente = clienteService.findById(id);
 
         if (cliente == null) {
             return Response.status(Response.Status.NOT_FOUND)
@@ -72,5 +56,36 @@ public class ClienteResource {
         }
 
         return Response.ok(cliente).build();
+    }
+
+    @PUT
+    @Path("/{id}")
+    public Response actualizar(@PathParam("id") Long id, Cliente cliente) {
+        Cliente existente = clienteService.findById(id);
+
+        if (existente == null) {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity("Cliente no encontrado")
+                    .build();
+        }
+
+        if (cliente == null
+                || cliente.getNombre() == null || cliente.getNombre().isBlank()
+                || cliente.getApellido() == null || cliente.getApellido().isBlank()
+                || cliente.getEmail() == null || cliente.getEmail().isBlank()
+                || cliente.getTelefono() == null || cliente.getTelefono().isBlank()) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity("Datos del cliente inválidos")
+                    .build();
+        }
+
+        existente.setNombre(cliente.getNombre());
+        existente.setApellido(cliente.getApellido());
+        existente.setEmail(cliente.getEmail());
+        existente.setTelefono(cliente.getTelefono());
+
+        clienteService.update(existente);
+
+        return Response.ok(existente).build();
     }
 }
