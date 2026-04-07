@@ -1,10 +1,10 @@
 package org.fletes.rest;
 
 import org.fletes.model.Camion;
+import org.fletes.service.CamionService;
 
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
-import jakarta.transaction.Transactional;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -12,16 +12,19 @@ import jakarta.ws.rs.core.Response;
 import java.net.URI;
 import java.util.List;
 
+
 @Path("/camiones")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class CamionResource {
 
     @Inject
+    CamionService camionService;
+
+    @Inject
     EntityManager em;
 
     @POST
-    @Transactional
     public Response crear(Camion camion) {
         if (camion == null || camion.getPatente() == null || camion.getPatente().isBlank()
                 || camion.getMarca() == null || camion.getMarca().isBlank()
@@ -47,7 +50,7 @@ public class CamionResource {
             camion.setActivo(true);
         }
 
-        em.persist(camion);
+        camionService.create(camion);
 
         return Response.created(URI.create("/camiones/" + camion.getId()))
                 .entity(camion)
@@ -56,17 +59,14 @@ public class CamionResource {
 
     @GET
     public Response listar() {
-        List<Camion> lista = em.createQuery(
-                "SELECT c FROM Camion c ORDER BY c.id", Camion.class)
-                .getResultList();
-
+        List<Camion> lista = camionService.findAll();
         return Response.ok(lista).build();
     }
 
     @GET
     @Path("/{id}")
     public Response buscarPorId(@PathParam("id") Long id) {
-        Camion camion = em.find(Camion.class, id);
+        Camion camion = camionService.findById(id);
 
         if (camion == null) {
             return Response.status(Response.Status.NOT_FOUND)
@@ -79,9 +79,8 @@ public class CamionResource {
 
     @PUT
     @Path("/{id}")
-    @Transactional
     public Response modificar(@PathParam("id") Long id, Camion datos) {
-        Camion camion = em.find(Camion.class, id);
+        Camion camion = camionService.findById(id);
 
         if (camion == null) {
             return Response.status(Response.Status.NOT_FOUND)
@@ -104,14 +103,15 @@ public class CamionResource {
         camion.setCapacidadVolumen(datos.getCapacidadVolumen());
         camion.setActivo(datos.getActivo() != null ? datos.getActivo() : true);
 
+        camionService.update(camion);
+
         return Response.ok(camion).build();
     }
 
     @DELETE
     @Path("/{id}")
-    @Transactional
     public Response eliminar(@PathParam("id") Long id) {
-        Camion camion = em.find(Camion.class, id);
+        Camion camion = camionService.findById(id);
 
         if (camion == null) {
             return Response.status(Response.Status.NOT_FOUND)
@@ -119,7 +119,7 @@ public class CamionResource {
                     .build();
         }
 
-        em.remove(camion);
+        camionService.delete(id);
         return Response.noContent().build();
     }
 }
