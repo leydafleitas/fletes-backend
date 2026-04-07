@@ -33,7 +33,7 @@ public class ReservaService {
             throw new IllegalArgumentException("El destino no puede estar vacío.");
         if (fechaInicio == null || fechaFin == null)
             throw new IllegalArgumentException("Las fechas no pueden ser nulas.");
-        if (!fechaFin.isAfter(fechaInicio))
+        if (fechaFin.isBefore(fechaInicio))
             throw new IllegalArgumentException("La fecha de fin debe ser posterior a la de inicio.");
         if (fechaInicio.isBefore(LocalDate.now()))
             throw new IllegalArgumentException("La fecha de inicio no puede ser en el pasado.");
